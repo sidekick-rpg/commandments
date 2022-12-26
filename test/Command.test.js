@@ -128,11 +128,11 @@ Parameters:
 		RunProvider(dataProvider, runner)
 	})
 
-	describe('matchingHandler', () => {
+	describe('matchingCommand can get the right handler', () => {
 		function runner(expected, command, unparsed) {
-			const actual = command.matchingHandler(unparsed)
+			const actual = command.matchingCommand(unparsed)
 
-			expect(actual).toStrictEqual(expected)
+			expect(actual.handler).toStrictEqual(expected)
 		}
 
 		const basicHandler = function () {}
@@ -185,6 +185,14 @@ Parameters:
 		options.addOption(new Option('f', 'Foo', 'foo'))
 		const optionsUnparsed = 'options --foo bar'
 
+		const paramsExpected = 'params output: bar'
+		const paramsHandler = function (params) {
+			return `params output: ${params.foo}`
+		}
+		const params = new Command('params', '', paramsHandler)
+		params.addParam(new Param('foo', 'Foo param'))
+		const paramsUnparsed = 'params bar'
+
 		const notCommand = new Command('not-command')
 		const notCommandUnparsed = 'different-command'
 
@@ -198,6 +206,11 @@ Parameters:
 				optionsExpected,
 				options,
 				optionsUnparsed,
+			],
+			'with params': [
+				paramsExpected,
+				params,
+				paramsUnparsed,
 			],
 			'not a command': [
 				null,

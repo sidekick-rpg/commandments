@@ -145,21 +145,37 @@ class Command {
 	}
 
 	run(unparsed) {
-		const handler = this.matchingHandler(unparsed)
+		const command = this.matchingCommand(unparsed)
 
-		if (handler === null) {
+		if (command === null) {
 			//error not a command
 			return null
 		}
 
-		const parsed = parser(unparsed)
+		const aliases = command.aliases()
+
+		const parsed = parser(unparsed, {
+			alias: aliases,
+			configuration: {
+				'strip-aliased': true,
+			},
+		})
 		delete parsed['_']
 		delete parsed['--']
+
+		console.log('detailed', parser.detailed(unparsed, {
+			alias: aliases,
+			configuration: {
+				'strip-aliased': true,
+			},
+		}))
+
+		const handler = command.handler()
 
 		return handler.apply(null, [ parsed ])
 	}
 
-	matchingHandler(unparsed) {
+	matchingCommand(unparsed) {
 		const parsed = parser(unparsed)
 		const commandsList = parsed['_']
 		const matchingCommand = this.#findMatchingCommand(this, commandsList)
@@ -168,7 +184,20 @@ class Command {
 			return null
 		}
 
-		return matchingCommand.handler()
+		return matchingCommand
+	}
+
+	aliases() {
+		const aliases = {}
+
+		this.#options.forEach(option => {
+			if (option.long()) {
+				console.log('alias', option.long(), option.short())
+				aliases[option.long()] = [ option.short() ]
+			}
+		})
+
+		return aliases
 	}
 
 	#buildCommandList() {
